@@ -1,0 +1,6 @@
+.idea/
+.vscode/.ropeproject/
+.vscode/settings.json
+
+*.log
+*.db
