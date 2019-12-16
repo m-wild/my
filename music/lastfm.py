@@ -13,6 +13,8 @@ conn = sqlite3.connect("mwild.db")
 user = "tehmantra"
 api_key = os.environ.get("LASTFM_APIKEY")
 api_url = "http://ws.audioscrobbler.com/2.0/"
+E_OPERATION_FAILED = 8
+E_SERVICE_OFFLINE = 11
 E_TEMPORARY_ERROR = 16
 E_RATE_LIMIT_EXCEEDED = 29
 
@@ -26,23 +28,25 @@ def main():
     conn.close()
 
 
-def get_tracks(start_page=1):
-  page = start_page
+def get_tracks():
   from_ts = db_get_last_ts()
-  r = api_user_getrecenttracks(user, start_page, from_ts)
+  r = api_user_getrecenttracks(user, 1, from_ts)
+
   total_pages = int(r["recenttracks"]["@attr"]["totalPages"])
 
-  logging.info("getting tracks from page={}, total_pages={}".format(start_page, total_pages))
+  logging.info("getting tracks from ts={}, total_pages={}".format(from_ts, total_pages))
 
-  while page <= total_pages:
-    if page > start_page:
-      r = api_user_getrecenttracks(user, page, from_ts)
+  # start from last page and work backwards
+  # this is better for error handling if something goes wrong
+  page = total_pages
+  while page > 0:
+    r = api_user_getrecenttracks(user, page, from_ts)
 
     tracks = r["recenttracks"]["track"]
     db_insert(tracks)
 
-    page += 1
-    time.sleep(.5)
+    page -= 1
+    time.sleep(.2)
 
 
 # insert scrobbled tracks to the db
@@ -142,8 +146,8 @@ def api_call(method: str, params: dict):
     if r.status_code == 200:
       return body
     else:
-      if body["error"] in [ E_TEMPORARY_ERROR, E_RATE_LIMIT_EXCEEDED ]:
-        logging.warn(body["message"])
+      if body["error"] in [ E_OPERATION_FAILED, E_SERVICE_OFFLINE, E_TEMPORARY_ERROR, E_RATE_LIMIT_EXCEEDED ]:
+        logging.warning(body["message"])
         time.sleep(60)
       else:
         err = "{}: {}".format(r.status_code, r.text)
