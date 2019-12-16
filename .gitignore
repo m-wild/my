@@ -1,6 +1,9 @@
 .idea/
 .vscode/.ropeproject/
 .vscode/settings.json
+__pycache__/
+.ipynb_checkpoints/
 
 *.log
 *.db
+
