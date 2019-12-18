@@ -9,6 +9,10 @@ create table if not exists music_scrobbles (
     track_mbid  text     null
 );
 
+-- this can only be unique where date > 0 due to bad data from last.fm
+-- prevents us from having a pkey on the table
+create unique index uq_music_scrobbles on music_scrobbles (date, artist, album, track) where (date > 0);
+
 -- normalize bad dates
 update music_scrobbles set date = 0
 where date(date, 'unixepoch') = '1970-01-01';
@@ -51,6 +55,10 @@ order by count(1) desc
 limit 10;
 
 
-
-
+select artist, count(1)
+from music_scrobbles
+where strftime('%Y', date, 'unixepoch') = '2019'
+group by artist
+order by count(1) desc
+limit 10;
 

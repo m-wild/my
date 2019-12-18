@@ -64,7 +64,9 @@ def db_insert(tracks):
       t["name"],
       t["mbid"]))
 
-  conn.executemany("insert into music_scrobbles (date, artist, artist_mbid, album, album_mbid, track, track_mbid) values (?, ?, ?, ?, ?, ?, ?)", sqlparams)
+  sql = """insert into music_scrobbles (date, artist, artist_mbid, album, album_mbid, track, track_mbid) 
+           values (strftime('%s', ?, 'unixepoch', 'localtime'), ?, ?, ?, ?, ?, ?)"""
+  conn.executemany(sql, sqlparams)
   conn.commit()
 
 def db_get_last_ts():
